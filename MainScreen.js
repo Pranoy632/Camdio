@@ -7,8 +7,15 @@ import {
   Text,
   View,
   Navigator,
-  TouchableOpacity
+  TouchableOpacity,
+  ActivityIndicator
 } from 'react-native';
+
+
+
+var SignIn = require('./SignIn');
+
+var AuthService = require('./AuthService');
 
 
 var SCREEN_WIDTH = require('Dimensions').get('window').width;
@@ -69,29 +76,83 @@ var Signinpage = React.createClass({
     this.props.navigator.pop();
   },
 
+
+  componentDidMount: function(){
+
+    AuthService.getAuthInfo((err, authInfo)=>{
+      this.setState({
+        checkingAuth: false,
+        isLoggedIn: authInfo != null
+
+      })
+
+    });
+
+  },
+
+
   render() {
+
+    if(this.state.checkingAuth){
+      return(
+          <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
+          <ActivityIndicator
+            animating={true}
+             size="large" />
+
+
+          </View>
+
+      );
+
+
+    }
+
+
+
+
+    if(this.state.isLoggedIn){
+      return(
+          <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
+          <Text>USER LOGGEDIN</Text>
+          </View>
+
+      );
+
+    }else{
+
+
     return (
-       <View>
-         <View style={styles.containersignin1}>
-           <Text style={{color:'white',fontFamily:'Ruda-Bold',fontSize:25}} >Camdio Web Address</Text>
-           <Text style={{color:'white',fontFamily:'Ruda-Bold',fontSize:20,marginTop:10}} >Email Address</Text>
-           <Text style={{color:'white',fontFamily:'Ruda-Bold',fontSize:20,marginTop:10}} >Password</Text>
-         </View>
+        <View style={styles.containersignin}>
 
-         <View style={styles.containersignin2}>
-           <View style={{width: 375,marginTop:35,paddingHorizontal:20}}>
-           <TouchableOpacity onPress={this._handlePress} style={styles.touchablesignin}>
-           <View>
-           <Text style={styles.touchablesignintext}>NEXT</Text>
-           </View>
-           </TouchableOpacity>
-           </View>
-        </View>
-
+        <SignIn onLogin={this.onLogin} />
 
         </View>
     );
+
+
+       }
+  },
+
+  onLogin: function(){
+    this.setState({isLoggedIn: true});
+  },
+
+
+  getInitialState: function() {
+
+    return{
+
+      isLoggedIn: false,
+
+      checkingAuth : true
+
+    };
+
   }
+
+
+
 });
 
 
@@ -139,19 +200,12 @@ const styles = StyleSheet.create({
     backgroundColor:  '#ffd777ff' ,
    },
 
-  containersignin1: {
-     justifyContent: 'center',
-     paddingHorizontal:10,
-    height:SCREEN_HEIGHT / 1.2,
-    backgroundColor: '#ffd777ff' ,
+
+  containersignin:{
+
+    flex:1
+
   },
-
-  containersignin2: {
-    height:SCREEN_HEIGHT,
-    backgroundColor:  '#ffd777ff' ,
-   },
-
-
 
 
   welcome: {
