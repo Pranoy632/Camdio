@@ -5,12 +5,8 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
-  View
+  View, AsyncStorage
 } from 'react-native';
 
-
 var Camdio = require('./MainScreen');
-
-
-
 AppRegistry.registerComponent('Camdio', () => Camdio);

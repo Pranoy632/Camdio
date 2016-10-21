@@ -1,6 +1,7 @@
 "use strict";
 
-import React, { Component } from 'react';
+import React, { Component, PropTypes } from 'react';
+import Router from 'react-native-simple-router';
 import {
   AppRegistry,
   StyleSheet,
@@ -8,7 +9,13 @@ import {
   View,
   Navigator,
   TouchableOpacity,
-  ActivityIndicator
+  TouchableHighlight,
+  ActivityIndicator,
+  ScrollView,
+  AlertIOS,
+  AsyncStorage,
+  Platform,
+  StatusBar
 } from 'react-native';
 
 
@@ -23,185 +30,217 @@ var SCREEN_HEIGHT = require('Dimensions').get('window').height;
 
 
 
+var Studentdetail = require('./Studentdetail');
+var Camlogout = require('./Camlogout');
 
 var BaseConfig = Navigator.SceneConfigs.FloatFromRight;
 
+
+//AsyncStorage.removeItem('token', function(){console.log('token not found')});//remove the user from Async-Storage
+
+
 var CustomLeftToRightGesture = Object.assign({}, BaseConfig.gestures.pop, {
-  // Make it snap back really quickly after canceling pop
+
   snapVelocity: 8,
-  // Make it so we can drag anywhere on the screen
+
   edgeHitWidth: SCREEN_WIDTH,
 });
 
+
 var CustomSceneConfig = Object.assign({}, BaseConfig, {
-  // A very tighly wound spring will make this transition fast
+
   springTension: 100,
   springFriction: 1,
-  // Use our custom gesture defined above
+
 
   gestures: null
 });
 
-var Mainpage  = React.createClass({
-  _signin() {
-    this.props.navigator.push({id: 2,});
-  },
+
+
+const propTypes = {
+  toRoute: PropTypes.func.isRequired
+};
+
+
+
+
+
+class Mainpage extends Component {
+
+  constructor(props) {
+    super(props);
+}
+
+
+ _signin() {
+    this.props.toRoute({
+      name: "Signin page",
+      component: SignIn,
+      hideNavigationBar:true,
+
+    });
+  }
 
   render() {
+
     return (
         <View>
           <View style={styles.containermainpage1}>
-          <Text style={styles.welcome}>CAMDIO</Text>
-          </View>
+             <Text style={styles.welcome}>CAMDIO</Text>
 
-          <View style={styles.containermainpage2}>
-          <View style={{width: 375,marginTop:35,paddingHorizontal:20}}>
-          <TouchableOpacity onPress={this._signin} style={styles.touchablesignin}>
+
+
+             <TouchableOpacity onPress={this._signin.bind(this)} style={[styles.touchablesignin ,{position:'absolute',left:30,right:30,bottom:30}]}>
           <View>
           <Text style={styles.touchablesignintext}>SIGN IN</Text>
           </View>
           </TouchableOpacity>
-          </View>
-          </View>
-
-
         </View>
+       </View>
     );
+
   }
+}
+
+
+
+
+Mainpage.propTypes = propTypes;
+
+
+const styles1 = StyleSheet.create({
+  header: {
+    backgroundColor:'blue'
+
+  },
 });
 
 
-var Signinpage = React.createClass({
-  _handlePress() {
-    this.props.navigator.pop();
-  },
+
+console.log("first")
+class  MainScreen extends React.Component {
+  constructor(){
+    super();
+    this.state = {isLoading:true, page:Mainpage};
 
 
-  componentDidMount: function(){
+  }
 
-    AuthService.getAuthInfo((err, authInfo)=>{
-      this.setState({
-        checkingAuth: false,
-        isLoggedIn: authInfo != null
+  componentWillMount(){
+    AuthService.checkToken();
+    AsyncStorage.getItem('token').then((value)=>{
 
-      })
-
-    });
-
-  },
+      if(value)
+        this.setState({page:Studentdetail,isLoading:false});
+       else
+        this.setState({page:Mainpage,isLoading:false});
+      }, ()=>{
+        this.setState({page:Mainpage,isLoading:false});
+      }).done();
+  }
 
 
   render() {
+     var initialRoute = {
+       component:this.state.page,
+       name:"CAMDIO",
+       rightCorner:Camlogout
+        };
+    if(this.state.page===Mainpage) {
+      initialRoute.hideNavigationBar=true;}
+     if(!this.state.isLoading)
+       return (
+         <Router
+         firstRoute={initialRoute}
+         noStatusBar={true}
+         rightCorner={Camlogout}
+         borderBottomWidth = {StyleSheet.hairlineWidth,2.5}
+         borderColor = '#c9aa5f'
+         headerStyle={styles.header}
+         titleStyle={styles.title}
+         statusBarProps= {(Platform.OS === 'ios') ? null: StatusBar.setBackgroundColor('black',true)}
 
-    if(this.state.checkingAuth){
-      return(
-          <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
-          <ActivityIndicator
-            animating={true}
-             size="large" />
-
-
-          </View>
-
+         />
       );
-
-
-    }
-
-
-
-
-    if(this.state.isLoggedIn){
-      return(
-          <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
-          <Text>USER LOGGEDIN</Text>
-          </View>
-
-      );
-
-    }else{
-
-
-    return (
-        <View style={styles.containersignin}>
-
-        <SignIn onLogin={this.onLogin} />
-
-        </View>
-    );
-
-
-       }
-  },
-
-  onLogin: function(){
-    this.setState({isLoggedIn: true});
-  },
-
-
-  getInitialState: function() {
-
-    return{
-
-      isLoggedIn: false,
-
-      checkingAuth : true
-
-    };
-
+    else{
+      return <View><Text>Loading...</Text></View>;
+     }
   }
-
-
-
-});
+}
 
 
 
 
 
 
-var  MainScreen = React.createClass({
+  const styles = StyleSheet.create({
 
-  _renderScene(route, navigator) {
-    if (route.id === 1) {
-      return <Mainpage navigator={navigator} />
-    } else if (route.id === 2) {
-      return <Signinpage navigator={navigator} />
-    }
+  header:{
+    backgroundColor:'#ffd777ff',
+    height:SCREEN_HEIGHT / 10.5,
+    justifyContent:'center'
+
+ },
+
+
+  title:{
+
+    fontFamily:'Ruda-Bold',
+    fontSize:24,
+    fontWeight:'bold',
+    alignSelf:'center'
+
   },
 
-  _configureScene(route) {
-    return CustomSceneConfig;
-  },
-
-
-
-
-  render() {
-    return (
-        <Navigator
-      initialRoute={{id: 1, }}
-      renderScene={this._renderScene}
-      configureScene={this._configureScene} />
-    );
-  }
-});
-
-const styles = StyleSheet.create({
   containermainpage1: {
     justifyContent: 'center',
     alignItems: 'center',
-    height:SCREEN_HEIGHT / 1.2,
+    height:SCREEN_HEIGHT,
     backgroundColor: '#ffd777ff' ,
   },
+
+
 
   containermainpage2: {
     height:SCREEN_HEIGHT,
     backgroundColor:  '#ffd777ff' ,
    },
 
-
   containersignin:{
+
+    flex:1
+
+  },
+
+
+
+
+  containerlogedin1:{
+    justifyContent:'center',
+    alignItems:'center',
+    backgroundColor:'#ffd777ff',
+    height:SCREEN_HEIGHT / 9,
+    borderBottomWidth: 2,
+    borderBottomColor:'#c9aa5f'
+  },
+
+
+
+
+
+  containerlogedin2:{
+    flex:1,
+
+    alignItems:'center',
+    backgroundColor:'#f2f2f2'
+
+  },
+
+
+
+
+  containerlogedin:{
 
     flex:1
 
@@ -215,12 +254,17 @@ const styles = StyleSheet.create({
     fontFamily:'Ruda-Bold',
     margin: 10,
   },
+
+
+
+
   instructions: {
     textAlign: 'center',
     color: '#333333',
     fontFamily:'Ruda-Black',
     marginBottom: 5,
   },
+
 
   touchablesignin: {
     flex:1,
@@ -229,10 +273,28 @@ const styles = StyleSheet.create({
     borderColor: 'skyblue',
     borderWidth: 2,
     borderRadius: 10,
+    marginTop:10,
     justifyContent:'center',
     padding: 5 ,
 
   },
+
+
+  touchablelogedin: {
+
+    backgroundColor: '#424a5d',
+    height: 55,
+    borderColor:'#424a5d',
+    borderWidth: 2,
+    width:250,
+    borderRadius: 10,
+    justifyContent:'center',
+    paddingHorizontal: 20 ,
+
+
+  },
+
+
 
   touchablesignintext: {
     flex: 1,
@@ -242,7 +304,21 @@ const styles = StyleSheet.create({
     color:'white'
   },
 
+   touchablelogedintext: {
 
+    fontSize: 20,
+    fontFamily:'Ruda-Bold',
+    alignSelf: 'center',
+    color:'white'
+  },
+
+  navborder: {
+
+
+    borderBottomWidth:3
+
+
+  }
 
 });
 

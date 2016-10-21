@@ -1,6 +1,6 @@
 "use strict";
 
-import React, { Component } from 'react';
+import React, { Component, PropTypes } from 'react';
 import {
   AppRegistry,
   StyleSheet,
@@ -9,69 +9,67 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  AlertIOS
+  AlertIOS,
+  AsyncStorage
 } from 'react-native';
 
 
+import {propTypes} from './MainScreen';
+
+
+var AuthService = require('./AuthService');
 var SCREEN_WIDTH = require('Dimensions').get('window').width;
 var SCREEN_HEIGHT = require('Dimensions').get('window').height;
-
+var Studentdetail = require('./Studentdetail');
+var Camlogout = require('./Camlogout');
 var buffer = require('buffer');
-
 class SignIn extends Component{
-
   constructor(props){
     super(props);
-
     this.state = {
-
-      showProgress: false
+    showProgress: false,
     };
-
-
   }
-
-
-
-
 
 
 
 
   onSigninPressed(){
 
-    console.log('Attempting to log in with username ' + this.state.domain + this.state.username + this.state.password);
-    this.setState({showProgress: true});
+
+
+     this.setState({showProgress: true});
 
 
     var authService = require('./AuthService');
-    authService.login({
-      username: this.state.username,
-      password: this.state.password,
-      domain: this.state.domain
+      authService.login({
+        username: this.state.username,
+        password: this.state.password,
+        domain: this.state.domain
     }, (results)=> {
       this.setState(Object.assign({
-
         showProgress: false
+       },results));
+      if(results.success){
+        this.props.resetToRoute({
+          component:Studentdetail,
+          name:"CAMDIO",
+          rightCorner:Camlogout,
+          titleStyle:styles.title
 
-      },results));
-
-      if(results.success && this.props.onLogin){
-        this.props.onLogin();
-
+        });
       }
-
     });
 
 
   }
 
-
-
-
-
-
   render(){
+
+
+
+
+
 
     var errorCtrl;
 
@@ -79,8 +77,6 @@ class SignIn extends Component{
             errorCtrl = <Text style = {styles.error}>
                    No account found for user.
               </Text>;
-
-            // errorCtrl = AlertIOS.alert('No account found for user');
           }
 
 
@@ -91,11 +87,10 @@ class SignIn extends Component{
        <View>
          <View style={styles.containersignin1}>
 
+           <View style={{flexDirection:'row',marginTop:60}}     >
+              <TextInput
 
-        <View style={{flexDirection:'row'}}     >
-        <TextInput
-
-             style={{height: 17,width:250,fontFamily:'ruda'}}
+             style={{height: 35,width:250,fontFamily:'ruda'}}
              placeholder = "Domain name"
              autoFocus = {true}
              autoCorrect = {false}
@@ -105,11 +100,12 @@ class SignIn extends Component{
 
          />
 
-        <Text style={{fontSize:16,fontFamily:'ruda'}}>.camdio.com</Text>
+            <Text style={{fontSize:16,fontFamily:'ruda'}}>.camdio.com</Text>
 
         </View>
+
          <TextInput
-      style={{height: 17,width:350,marginTop:20,fontFamily:'ruda'}}
+            style={{height: 35,width:350,marginTop:20,fontFamily:'ruda'}}
             placeholder = "Enter Username"
             keyboardtype ={'default'}
             autoCorrect = {false}
@@ -119,7 +115,7 @@ class SignIn extends Component{
          />
 
            <TextInput
-             style={{height: 17,width:350,fontFamily:'ruda',marginTop:20}}
+             style={{height: 35,width:350,fontFamily:'ruda',marginTop:20}}
              placeholder = "Enter Password"
              keyboardType = {'default'}
              autoCorrect = {false}
@@ -129,36 +125,27 @@ class SignIn extends Component{
 
         />
 
-             {errorCtrl}
-
-
-
-
             <ActivityIndicator
-            animating={this.state.showProgress}
+            animating={true}
             size="large"
-            style={styles.loader}
+s            style={[styles.loader,{opacity: this.state.showProgress ? 1.0 : 0.0}]}
 
-          />
+             />
+
+            <View style={{height:10,alignItems:'center'}}  >
+              {errorCtrl}
+            </View>
+
+        <TouchableOpacity disabled={this.state.showProgress} onPress={this.onSigninPressed.bind(this)} style={[styles.touchablesignin ,{position:'absolute',left:30,right:30,bottom:30}]}>
+             <View>
+                <Text style={styles.touchablesignintext}>SIGN IN</Text>
+             </View>
+          </TouchableOpacity>
 
 
-         </View>
-
-        <View style={styles.containersignin2}>
-         <View style={{width: 375,marginTop:35,paddingHorizontal:20}}>
-          <TouchableOpacity onPress={this.onSigninPressed.bind(this)} style={styles.touchablesignin}>
-         <View>
-           <Text style={styles.touchablesignintext}>SIGN IN</Text>
-         </View>
-            </TouchableOpacity>
-         </View>
         </View>
 
-
-
-
-
-       </View>
+     </View>
 
 
     );
@@ -169,19 +156,45 @@ class SignIn extends Component{
 
 }
 
-
+SignIn.propTypes = propTypes;
 const styles = StyleSheet.create({
 
+  header:{
+    backgroundColor:'#ffd777ff',
+    height:SCREEN_HEIGHT / 10,
+    justifyContent:'center'
+
+ },
+
+
+  title:{
+
+    fontFamily:'Ruda-Bold',
+    fontSize:24,
+    fontWeight:'bold',
+    alignSelf:'center'
+
+  },
+
   containersignin1: {
+    flex:1,
     justifyContent: 'center',
     paddingHorizontal:10,
-    height:SCREEN_HEIGHT / 1.2,
+    height:SCREEN_HEIGHT,
     backgroundColor: '#ffd777ff' ,
   },
 
   containersignin2: {
+    flex:1,
     height:SCREEN_HEIGHT,
     backgroundColor:  '#ffd777ff' ,
+  },
+  containererror: {
+    flex:1,
+    backgroundColor: '#ffd777ff',
+    height:SCREEN_WIDTH,
+    alignItems:'center'
+
   },
 
   touchablesignin: {
@@ -208,17 +221,14 @@ const styles = StyleSheet.create({
 
   loader: {
 
-    marginTop: 80
+    marginTop:80
 
   },
 
+
   error: {
-
-
-    color:'red',
-
-
-  }
+   color:'red',
+ }
 
 
 });
